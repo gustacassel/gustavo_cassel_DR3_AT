@@ -31,6 +31,13 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
+    // relido a cada refresh: conta removida deixa de renovar
+    public Usuario buscarPorEmail(String email) {
+        return this.usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "Usuario do token nao existe mais"));
+    }
+
     public Usuario autenticar(LoginRequest request){
         Usuario usuario = this.usuarioRepository.findByEmail(request.getEmail())
             .orElseThrow(()-> new ResponseStatusException(HttpStatus.UNAUTHORIZED,"E-mail ou senha inválidos"));

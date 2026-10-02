@@ -24,7 +24,7 @@ COPY --from=build /app/target/*.jar app.jar
 
 # Documenta a porta usada pela aplicação (não publica sozinha; quem expõe
 # de verdade pra fora do container é o "ports:" no docker-compose.yml)
-EXPOSE 8086
+EXPOSE 8084
 
 # Comando executado quando o container sobe
 ENTRYPOINT ["java", "-jar", "app.jar"]
