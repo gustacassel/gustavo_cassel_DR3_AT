@@ -20,15 +20,15 @@ flowchart LR
     gw --> clie["clientes-service :8083"]
     gw --> vend["vendas-service :8082"]
 
-    forn -- OpenFeign --> prod
-    vend -- OpenFeign --> prod
+    forn -->|OpenFeign| prod
+    vend -->|OpenFeign| prod
 
     eureka["eureka-server :8761"]
     config["config-server :8888"]
     repo[("config-repo")]
 
-    gw -. descobre os serviços .-> eureka
-    config -. lê os .properties .-> repo
+    gw -.->|descobre os serviços| eureka
+    config -.->|"lê os arquivos .properties"| repo
 ```
 
 Todos os serviços de domínio se registram no **Eureka** e buscam a configuração (porta, banco H2, URL do Eureka) no **Config Server**, que lê a pasta `config-repo`. O **Gateway** é a única porta de entrada: descobre os serviços pelo nome registrado no Eureka, sem rotas escritas à mão, e confere o token JWT antes de repassar a requisição.
