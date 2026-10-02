@@ -1,5 +1,6 @@
 package com.exemplo.fornecedoresservice.controller;
 
+import com.exemplo.fornecedoresservice.dto.ProdutoDTO;
 import com.exemplo.fornecedoresservice.model.Fornecedor;
 import com.exemplo.fornecedoresservice.service.FornecedorService;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,11 @@ public class FornecedorController {
     @GetMapping
     public List<Fornecedor> listarTodos() {
         return fornecedorService.listarTodos();
+    }
+
+    @GetMapping("/produtos")
+    public List<ProdutoDTO> listarProdutos() {
+        return fornecedorService.listarProdutos();
     }
 
     @GetMapping("/{id}")

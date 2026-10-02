@@ -1,5 +1,7 @@
 package com.exemplo.fornecedoresservice.service;
 
+import com.exemplo.fornecedoresservice.client.ProdutoClient;
+import com.exemplo.fornecedoresservice.dto.ProdutoDTO;
 import com.exemplo.fornecedoresservice.model.Fornecedor;
 import com.exemplo.fornecedoresservice.repository.FornecedorRepository;
 import org.springframework.http.HttpStatus;
@@ -13,9 +15,11 @@ import java.util.Optional;
 public class FornecedorService {
 
     private final FornecedorRepository fornecedorRepository;
+    private final ProdutoClient produtoClient;
 
-    public FornecedorService(FornecedorRepository fornecedorRepository) {
+    public FornecedorService(FornecedorRepository fornecedorRepository, ProdutoClient produtoClient) {
         this.fornecedorRepository = fornecedorRepository;
+        this.produtoClient = produtoClient;
     }
 
     public List<Fornecedor> listarTodos() {
@@ -40,5 +44,9 @@ public class FornecedorService {
         // o id e gerado pelo banco, nunca aceito do corpo da requisicao
         fornecedor.setId(null);
         return fornecedorRepository.save(fornecedor);
+    }
+
+    public List<ProdutoDTO> listarProdutos() {
+        return produtoClient.listarProdutos();
     }
 }
