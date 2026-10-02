@@ -1,5 +1,6 @@
 package com.example.gateway.filter;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,10 +22,14 @@ import java.util.List;
 @Component
 public class TokenFilter implements GlobalFilter, Ordered {
 
+    private static final String CLAIM_TIPO = "tipo";
+    private static final String TIPO_ACCESS = "access";
+
     // As unicas rotas que passam sem token. Sem elas ninguem consegue se
     // cadastrar nem pegar o primeiro token -- o sistema tranca por fora.
     private static final List<String> LIVRES = List.of(
             "/auth-service/usuarios/login",
+            "/auth-service/usuarios/refresh",
             "/auth-service/usuarios");
 
     private final SecretKey chave;
@@ -58,10 +63,16 @@ public class TokenFilter implements GlobalFilter, Ordered {
             // substring(7) corta o "Bearer " (7 letras) e deixa so' o token.
             // parseSignedClaims confere a assinatura com a nossa chave e
             // estoura excecao se o token for falso ou tiver sido alterado.
-            Jwts.parser()
+            Claims claims = Jwts.parser()
                     .verifyWith(chave)
                     .build()
-                    .parseSignedClaims(cabecalho.substring(7));
+                    .parseSignedClaims(cabecalho.substring(7))
+                    .getPayload();
+
+            // refresh token tem assinatura valida, mas nao serve como credencial de acesso
+            if (!TIPO_ACCESS.equals(claims.get(CLAIM_TIPO, String.class))) {
+                return recusar(exchange);
+            }
         } catch (Exception e) {
             return recusar(exchange);
         }
