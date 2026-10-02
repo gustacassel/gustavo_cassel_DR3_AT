@@ -8,6 +8,12 @@ services:
       - "8761:8761"                # porta_da_maquina:porta_do_container -> localhost:8761
     networks:
       - microservicos-net           # entra na rede compartilhada com os outros serviços
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8761/eureka/apps"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
 
   # --- Configurações centralizadas (lê o config-repo) ---
   config-server:
@@ -29,14 +35,23 @@ services:
       - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=file:///config-repo
     networks:
       - microservicos-net
+    # healthy so quando ja serve uma configuracao, nao apenas com a porta aberta
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8888/auth-service/default"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
 
   # --- Serviço de produtos ---
   produtos-service:
     build: ./produtos-service
     container_name: produtos-service
-    depends_on:                    # só cria este container depois dos dois abaixo
-      - eureka-server               # (não garante que já estejam "prontos", só criados)
-      - config-server
+    depends_on:                    # só cria este container quando os dois abaixo estiverem healthy
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
     environment:
       # troca "localhost" por "config-server", o nome do serviço na rede Docker
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
@@ -55,8 +70,10 @@ services:
     build: ./vendas-service
     container_name: vendas-service
     depends_on:
-      - eureka-server
-      - config-server
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       # ativa o profile "docker", que faz o config-server servir também
@@ -72,8 +89,10 @@ services:
     build: ./clientes-service
     container_name: clientes-service
     depends_on:
-      - eureka-server
-      - config-server
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       # ativa o profile "docker", que faz o config-server servir também
@@ -90,8 +109,10 @@ services:
     build: ./auth-service
     container_name: auth-service
     depends_on:
-      - eureka-server
-      - config-server
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       # ativa o profile "docker", que faz o config-server servir também
@@ -107,8 +128,9 @@ services:
   gateway:
     build: ./gateway
     container_name: gateway
-    depends_on:
-      - eureka-server               # gateway só precisa do eureka pra descobrir os serviços
+    depends_on:                    # gateway só precisa do eureka pra descobrir os serviços
+      eureka-server:
+        condition: service_healthy
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     ports:
